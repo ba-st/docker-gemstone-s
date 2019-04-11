@@ -66,43 +66,9 @@ RUN true \
     ${GEMSTONE}/include/ \
     ${GEMSTONE}/install/ \
   && touch /opt/gemstone/conf/gemserver66.conf \
-  && ln --symbolic ${GEMSTONE}/libgcilnk?*.so ${GEMSTONE}/libgcilnk.so \
-  && ln --symbolic ${GEMSTONE}/libgcirpc?*.so ${GEMSTONE}/libgcirpc.so \
   && echo "netldi66 50384/tcp #GemStone" >> /etc/services \
-  && echo "gemserver66 50385/tcp #GemStone" >> /etc/services
-
-# Mimic permissions set by the gemstone install script
-RUN chown --recursive ${GS_UID}:${GS_GID} /opt/gemstone \
-  && chmod --recursive ug+x \
-    ${GEMSTONE}/bin \
-    ${GEMSTONE}/lib \
-  && chmod a+rw \
-    /opt/gemstone/locks \
-    /opt/gemstone/log \
-  && chmod ug+w \
-    /opt/gemstone \
-    /opt/gemstone/conf \
-    /opt/gemstone/data \
-  && chmod a-wx+X \
-    /opt/gemstone/data/extent0.dbf \
-    ${GEMSTONE} \
-    ${GEMSTONE}/bin/gemsetup.csh \
-    ${GEMSTONE}/bin/gemsetup.sh \
-    ${GEMSTONE}/bin/initial.config \
-    ${GEMSTONE}/bin/nrspec.sh \
-    ${GEMSTONE}/licenses \
-    ${GEMSTONE}/PACKING \
-    ${GEMSTONE}/ualib \
-  && chmod a-wx+X -R \
-    ${GEMSTONE}/lib \
-    ${GEMSTONE}/pub \
-  && chmod o-rw /opt/gemstone \
-  && chmod o-rwx /opt/gemstone/data/ \
-  && chmod a+x \
-    ${GEMSTONE}/lib/*.so \
-    ${GEMSTONE}/pub/timezone/etc/zdump \
-    ${GEMSTONE}/pub/timezone/etc/zic \
-  && true
+  && echo "gemserver66 50385/tcp #GemStone" >> /etc/services \
+  && chown --recursive ${GS_UID}:${GS_GID} /opt/gemstone
 
 ## Stage 2 - Final image
 
