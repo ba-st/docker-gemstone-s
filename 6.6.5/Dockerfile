@@ -99,8 +99,8 @@ RUN dpkg --add-architecture i386 \
 COPY --from=builder --chown=gemstone:users /opt/gemstone /opt/gemstone
 COPY --from=builder /etc/services /etc/services
 
+VOLUME /opt/gemstone/data/
 USER ${GS_UID}:${GS_GID}
-
 WORKDIR /opt/gemstone
-
+LABEL maintainer="serpi90@gmail.com"
 CMD ["./gemstone.sh"]
