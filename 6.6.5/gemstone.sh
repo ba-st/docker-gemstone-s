@@ -18,6 +18,14 @@ term_handler() {
   exit 143; # 128 + 15 -- SIGTERM
 }
 
+if [ ! -f /opt/gemstone/data/extent0.dbf ]; then
+  cp "$GEMSTONE"/bin/extent0.dbf /opt/gemstone/data/extent0.dbf
+fi
+
+if [ ! -w /opt/gemstone/data/extent0.dbf ]; then
+  chmod u+w /opt/gemstone/data/extent0.dbf
+fi
+
 # setup handlers
 # on callback, kill the last background process, 
 # which is `tail -f /dev/null` and execute the specified handler

@@ -57,7 +57,7 @@ RUN true \
     /opt/gemstone/data/ \
     /opt/gemstone/locks/ \
     /opt/gemstone/log/ \
-  && mv ${GEMSTONE}/bin/extent0.dbf /opt/gemstone/data/extent0.dbf \
+  && cp ${GEMSTONE}/bin/extent0.dbf /opt/gemstone/data/extent0.dbf \
   && mv ${GEMSTONE}/data/system.conf /opt/gemstone/conf/system.conf \
   && touch /opt/gemstone/conf/gemserver67.conf \
   && echo "netldi67 50384/tcp #GemStone" >> /etc/services \

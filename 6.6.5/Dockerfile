@@ -56,7 +56,7 @@ RUN true \
     /opt/gemstone/data/ \
     /opt/gemstone/locks/ \
     /opt/gemstone/log/ \
-  && mv ${GEMSTONE}/bin/extent0.dbf /opt/gemstone/data/extent0.dbf \
+  && cp ${GEMSTONE}/bin/extent0.dbf /opt/gemstone/data/extent0.dbf \
   && mv ${GEMSTONE}/data/system.conf /opt/gemstone/conf/system.conf \
   && rm --recursive --force \
     ${GEMSTONE}/bin/obsolete/ \
