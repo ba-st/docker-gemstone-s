@@ -1,0 +1,25 @@
+#!/bin/bash
+set -eu
+
+VERSION=$DOCKER_TAG
+MAJOR=$(sed -r 's/^(.*)\.(.*)\..*$/\1\2/' <<< "$VERSION")
+if (( MAJOR < 67 ))
+then ARCH=i686
+else ARCH=x86_64
+fi
+
+docker build \
+  --cache-from "$DOCKER_REPO:base" \
+  --file "$DOCKERFILE_PATH" \
+  --tag "$DOCKER_REPO:base" \
+  --target base \
+  .
+docker build \
+  --build-arg "GS_ARCH=$ARCH" \
+  --build-arg "GS_MAJOR_VERSION=$MAJOR" \
+  --build-arg "GS_VERSION=$VERSION" \
+  --cache-from "$DOCKER_REPO:base" \
+  --cache-from "$IMAGE_NAME" \
+  --file "$DOCKERFILE_PATH" \
+  --tag "$IMAGE_NAME" \
+  .

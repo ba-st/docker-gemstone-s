@@ -1,0 +1,5 @@
+#!/bin/bash
+set -eu
+
+docker pull "$DOCKER_REPO:base" || true
+docker pull "$IMAGE_NAME" || true

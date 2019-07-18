@@ -14,7 +14,7 @@ my_handler() {
 term_handler() {
   echo 'Got SIGTERM, stopping GemStone'
   stopnetldi
-  stopstone -i gemserver67 DataCurator swordfish
+  stopstone -i "$STONE" DataCurator swordfish
   exit 143; # 128 + 15 -- SIGTERM
 }
 
