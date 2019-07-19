@@ -54,9 +54,6 @@ RUN mkdir -p /opt/gemstone \
 
 COPY gemstone.sh /opt/gemstone/gemstone.sh
 
-# Set gemstone environment variables as global
-RUN ln -s ${GEMSTONE}/bin/gemsetup.sh /etc/profile.d/gemstone.sh
-
 # Setup: create required directories and remove unnecesary files
 RUN true \
   && mkdir -p \
@@ -88,6 +85,7 @@ ENV STONE=gemserver${GS_MAJOR_VERSION}
 
 COPY --from=download --chown=gemstone:users /opt/gemstone /opt/gemstone
 COPY --from=download /etc/services /etc/services
+RUN ln -s ${GEMSTONE}/bin/gemsetup.sh /etc/profile.d/gemstone.sh
 
 USER ${GS_UID}:${GS_GID}
 WORKDIR /opt/gemstone
