@@ -26,6 +26,7 @@ RUN dpkg --add-architecture i386 \
   && apt-get update \
   && apt-get install --assume-yes --no-install-recommends \
     ca-certificates \
+    gosu \
     libldap-2.4-2:i386 \
     libstdc++6:i386 \
     libx11-6:i386 \
@@ -53,6 +54,7 @@ RUN mkdir -p /opt/gemstone \
   && mv /tmp/GemStone${GS_VERSION}-${GS_ARCH}.Linux ${GEMSTONE}
 
 COPY gemstone.sh /opt/gemstone/gemstone.sh
+COPY entrypoint.sh /opt/gemstone/entrypoint.sh
 
 # Setup: create required directories and remove unnecesary files
 RUN true \
@@ -70,8 +72,6 @@ RUN true \
     ${GEMSTONE}/include/ \
     ${GEMSTONE}/install/ \
   && ln -s /opt/gemstone/conf/system.conf /opt/gemstone/conf/gemserver${GS_MAJOR_VERSION}.conf \
-  && echo "netldi${GS_MAJOR_VERSION} 50384/tcp #GemStone" >> /etc/services \
-  && echo "gemserver${GS_MAJOR_VERSION} 50385/tcp #GemStone" >> /etc/services \
   ;
 
 
@@ -81,13 +81,14 @@ FROM base
 LABEL maintainer="serpi90@gmail.com"
 
 ARG GS_MAJOR_VERSION
+ENV NETLDI=netldi${GS_MAJOR_VERSION}
+ENV NETLDI_PORT=50384
 ENV STONE=gemserver${GS_MAJOR_VERSION}
+ENV STONE_PORT=50385
 
 COPY --from=download --chown=gemstone:users /opt/gemstone /opt/gemstone
-COPY --from=download /etc/services /etc/services
 RUN ln -s ${GEMSTONE}/bin/gemsetup.sh /etc/profile.d/gemstone.sh
 
-USER ${GS_UID}:${GS_GID}
 WORKDIR /opt/gemstone
 VOLUME /opt/gemstone/data/
-CMD ["./gemstone.sh"]
+CMD ["./entrypoint.sh"]

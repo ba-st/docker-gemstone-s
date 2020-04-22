@@ -18,23 +18,15 @@ term_handler() {
   exit 143; # 128 + 15 -- SIGTERM
 }
 
-if [ ! -f /opt/gemstone/data/extent0.dbf ]; then
-  cp "$GEMSTONE"/bin/extent0.dbf /opt/gemstone/data/extent0.dbf
-fi
-
-if [ ! -w /opt/gemstone/data/extent0.dbf ]; then
-  chmod u+w /opt/gemstone/data/extent0.dbf
-fi
-
 # setup handlers
-# on callback, kill the last background process, 
+# on callback, kill the last background process,
 # which is `tail -f /dev/null` and execute the specified handler
 trap 'kill ${!}; my_handler' SIGUSR1
 trap 'kill ${!}; term_handler' SIGTERM
 
 # start GemStone services
 # shellcheck disable=SC2086
-startnetldi -g -a "$GS_USER" -n ${NETLDI_ARGS:-}
+startnetldi -g -a "$GS_USER" -n ${NETLDI_ARGS:-} "${NETLDI}"
 # shellcheck disable=SC2086
 startstone -e /opt/gemstone/conf -z /opt/gemstone/conf -l /opt/gemstone/log/stone.log ${STONE_ARGS:-}
 
