@@ -61,7 +61,7 @@ RUN true \
     /opt/gemstone/data/ \
     /opt/gemstone/locks/ \
     /opt/gemstone/log/ \
-  && mv ${GEMSTONE}/data/system.conf /opt/gemstone/conf/system.conf \
+  && sed -r 's|\$GEMSTONE/data|/opt/gemstone/data|g' ${GEMSTONE}/data/system.conf > /opt/gemstone/conf/system.conf \
   && rm -rf \
     ${GEMSTONE}/bin/obsolete/ \
     ${GEMSTONE}/data/ \
@@ -69,7 +69,7 @@ RUN true \
     ${GEMSTONE}/examples/ \
     ${GEMSTONE}/include/ \
     ${GEMSTONE}/install/ \
-  && touch /opt/gemstone/conf/gemserver${GS_MAJOR_VERSION}.conf \
+  && ln -s /opt/gemstone/conf/system.conf /opt/gemstone/conf/gemserver${GS_MAJOR_VERSION}.conf \
   && echo "netldi${GS_MAJOR_VERSION} 50384/tcp #GemStone" >> /etc/services \
   && echo "gemserver${GS_MAJOR_VERSION} 50385/tcp #GemStone" >> /etc/services \
   ;
