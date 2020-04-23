@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eu
 
 VERSION=${1?please specify a gemstone version. $0 6.6.5 for example}
