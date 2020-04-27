@@ -71,8 +71,12 @@ RUN true \
     ${GEMSTONE}/examples/ \
     ${GEMSTONE}/include/ \
     ${GEMSTONE}/install/ \
-  && ln -s /opt/gemstone/conf/system.conf /opt/gemstone/conf/gemserver${GS_MAJOR_VERSION}.conf \
-  ;
+    ;
+
+# Use the same .conf file for system and stone
+RUN ln -s /opt/gemstone/conf/system.conf /opt/gemstone/conf/gemserver${GS_MAJOR_VERSION}.conf
+# We place .conf files on /opt/gemstone/conf, not on $GEMSTONE/data, link the default location to the new location
+RUN ln -s /opt/gemstone/conf/ ${GEMSTONE}/data
 
 
 
