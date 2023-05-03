@@ -8,7 +8,7 @@
 # - Copy prepared environment onto stage 2, the final image, to reduce final docker image size
 
 ## Prepare base image to use docker cache during build
-FROM debian:9-slim AS base
+FROM debian:11-slim AS base
 
 ENV SHELL=/bin/bash \
     GS_USER=gemstone \
