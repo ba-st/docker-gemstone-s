@@ -32,6 +32,7 @@ RUN dpkg --add-architecture i386 \
   && apt-get update \
   && apt-get install --assume-yes --no-install-recommends \
     ca-certificates \
+    curl \
     gosu \
     libcrypt1:i386 \
     libldap2:i386 \
