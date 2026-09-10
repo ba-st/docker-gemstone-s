@@ -12,21 +12,33 @@ on:
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/gemstone-s
-  # The GemStone/S version this repository publishes. GS_ARCH and
-  # GS_MAJOR_VERSION follow from it, the same way local-build.sh derives them.
-  GS_VERSION: '6.7.2.1'
-  GS_ARCH: 'x86_64'
-  GS_MAJOR_VERSION: '67'
 
 jobs:
   build_and_publish:
-    name: Build and publish Docker images
+    name: Build and publish GemStone/S ${{ matrix.version }}
     permissions:
       # for actions/checkout to fetch code
       contents: read
       # for codeql-action to upload SARIF results
       security-events: write
     runs-on: ubuntu-latest
+
+    strategy:
+      # 6.6.5 and 6.7.2.1 are independent deliverables, not shards of one build:
+      # a failure in either must not cancel the other.
+      fail-fast: false
+      matrix:
+        include:
+          # 6.7.2.1 is the default version this repository publishes.
+          - version: '6.7.2.1'
+            arch: 'x86_64'
+            major: '67'
+          # 6.6.5 is the last version known to work with our code, published so a
+          # rollback of the 6.7.x upgrade is a tag change rather than a rebuild.
+          # It ships only the i686 distribution; there is no x86_64 Linux build.
+          - version: '6.6.5'
+            arch: 'i686'
+            major: '66'
 
     steps:
       - name: Checkout repository
@@ -48,14 +60,21 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
-          # The plain version tag is only published from the default branch,
-          # so that a build from a topic branch cannot overwrite it.
+          # "latest=auto" (the default) appends a bare "latest" on a semver git tag.
+          # That tag carries no version suffix, so both matrix legs would publish it
+          # and race. This project does not bless a "latest" either, so: off.
+          flavor: latest=false
+          # Every tag derived from the git ref is identical across matrix legs, so
+          # each one needs a per-version suffix or the legs overwrite each other's
+          # tags. The plain version tag is already unique per leg and stays bare;
+          # it is only published from the default branch, so that a build from a
+          # topic branch cannot overwrite it.
           tags: |
-            type=raw,value=${{ env.GS_VERSION }},enable={{is_default_branch}}
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=sha
+            type=raw,value=${{ matrix.version }},enable={{is_default_branch}}
+            type=ref,event=branch,suffix=-${{ matrix.version }}
+            type=ref,event=pr,suffix=-${{ matrix.version }}
+            type=semver,pattern={{version}},suffix=-${{ matrix.version }}
+            type=sha,suffix=-${{ matrix.version }}
 
       - name: Docker build and push
         uses: docker/build-push-action@v7
@@ -63,14 +82,18 @@ jobs:
           context: .
           file: ./Dockerfile
           build-args: |
-            GS_ARCH=${{ env.GS_ARCH }}
-            GS_MAJOR_VERSION=${{ env.GS_MAJOR_VERSION }}
-            GS_VERSION=${{ env.GS_VERSION }}
+            GS_ARCH=${{ matrix.arch }}
+            GS_MAJOR_VERSION=${{ matrix.major }}
+            GS_VERSION=${{ matrix.version }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # The gha cache scope defaults to the literal "buildkit" for every build,
+          # so without a per-version scope each leg would evict the other's cache.
+          # This caches the shared base stage once per version, which is the price
+          # of both legs actually hitting their cache.
+          cache-from: type=gha,scope=${{ matrix.version }}
+          cache-to: type=gha,scope=${{ matrix.version }},mode=max
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
@@ -88,3 +111,8 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           sarif_file: 'trivy-results.sarif'
+          # Required: uploading more than one SARIF file from the same tool in one
+          # workflow overwrites the earlier results unless each has its own
+          # category. The automatic matrix-derived category only applies to
+          # codeql-action/analyze, not to third-party uploads.
+          category: trivy-gemstone-${{ matrix.version }}
