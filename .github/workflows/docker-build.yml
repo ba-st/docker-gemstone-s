@@ -12,26 +12,21 @@ on:
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/gemstone-s
+  # The GemStone/S version this repository publishes. GS_ARCH and
+  # GS_MAJOR_VERSION follow from it, the same way local-build.sh derives them.
+  GS_VERSION: '6.7.2.1'
+  GS_ARCH: 'x86_64'
+  GS_MAJOR_VERSION: '67'
 
 jobs:
   build_and_publish:
-    name: Build and publish GemStone/S ${{ matrix.version }}
+    name: Build and publish Docker images
     permissions:
       # for actions/checkout to fetch code
       contents: read
       # for codeql-action to upload SARIF results
       security-events: write
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # GS_ARCH and GS_MAJOR_VERSION are derived from the version by
-        # local-build.sh; they are spelled out here rather than reproducing
-        # that arithmetic in YAML.
-        include:
-          - version: '6.7.2.1'
-            arch: 'x86_64'
-            major: '67'
 
     steps:
       - name: Checkout repository
@@ -53,15 +48,14 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
-          # Every tag carries the GemStone version, so that matrix entries
-          # publishing to the same image cannot overwrite each other.
+          # The plain version tag is only published from the default branch,
+          # so that a build from a topic branch cannot overwrite it.
           tags: |
-            type=raw,value=${{ matrix.version }}
-            type=ref,event=branch,prefix=${{ matrix.version }}-
-            type=ref,event=pr,prefix=${{ matrix.version }}-pr-
-            type=sha,prefix=${{ matrix.version }}-
-          flavor: |
-            latest=false
+            type=raw,value=${{ env.GS_VERSION }},enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
 
       - name: Docker build and push
         uses: docker/build-push-action@v7
@@ -69,20 +63,20 @@ jobs:
           context: .
           file: ./Dockerfile
           build-args: |
-            GS_ARCH=${{ matrix.arch }}
-            GS_MAJOR_VERSION=${{ matrix.major }}
-            GS_VERSION=${{ matrix.version }}
+            GS_ARCH=${{ env.GS_ARCH }}
+            GS_MAJOR_VERSION=${{ env.GS_MAJOR_VERSION }}
+            GS_VERSION=${{ env.GS_VERSION }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=gha,scope=gemstone-s-${{ matrix.version }}
-          cache-to: type=gha,mode=max,scope=gemstone-s-${{ matrix.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         if: github.event_name != 'pull_request'
         with:
-          image-ref: ${{ env.IMAGE }}:${{ matrix.version }}
+          image-ref: ${{ env.IMAGE }}:${{ steps.docker_meta.outputs.version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -94,5 +88,3 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           sarif_file: 'trivy-results.sarif'
-          # Required: without it matrix entries overwrite each other's results
-          category: gemstone-s-${{ matrix.version }}
