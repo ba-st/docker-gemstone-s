@@ -8,7 +8,7 @@
 # - Copy prepared environment onto stage 2, the final image, to reduce final docker image size
 
 ## Prepare base image to use docker cache during build
-FROM debian:11-slim AS base
+FROM debian:13-slim AS base
 
 ENV SHELL=/bin/bash \
     GS_USER=gemstone \
@@ -22,14 +22,20 @@ ENV SHELL=/bin/bash \
     PATH=/opt/gemstone/product/bin:$PATH \
     GS_FORCE_CLEAN_LOG_FILE_DELETE=true
 
+# The GemStone tooling we run (startnetldi, startstone, stopnetldi, gslist,
+# topaz, ...) is 32-bit even in the x86_64 distribution, hence the i386 packages.
+# - libcrypt1 is needed by every GemStone binary. Until Debian 12 it came in as a
+#   dependency of libc6; since Debian 13 it does not, so it must be explicit.
+# - libldap2 is not linked by any shipped GemStone binary, but user actions compiled
+#   as separate .so files link against it, so it must be present. Do not remove.
 RUN dpkg --add-architecture i386 \
   && apt-get update \
   && apt-get install --assume-yes --no-install-recommends \
     ca-certificates \
     gosu \
-    libldap-2.4-2:i386 \
+    libcrypt1:i386 \
+    libldap2:i386 \
     libstdc++6:i386 \
-    libx11-6:i386 \
     locales \
   && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
   && echo "en_US.ISO-8859-15 ISO-8859-15" >> /etc/locale.gen \
@@ -42,7 +48,7 @@ RUN dpkg --add-architecture i386 \
 
 
 ## Download GemStone from GemTalk Systems
-FROM alpine:3.10 as download
+FROM alpine:3.24 AS download
 
 ARG GS_ARCH
 ARG GS_MAJOR_VERSION
