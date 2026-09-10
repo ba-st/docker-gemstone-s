@@ -88,7 +88,6 @@ RUN ln -s /opt/gemstone/conf/ ${GEMSTONE}/data
 
 ## Prepare the final image
 FROM base
-LABEL maintainer="serpi90@gmail.com"
 
 ARG GS_MAJOR_VERSION
 ENV NETLDI=netldi${GS_MAJOR_VERSION}
